@@ -1,0 +1,280 @@
+{
+  "plan": {
+    "schemaVersion": 1,
+    "version": "plan-1",
+    "questions": [],
+    "design": "单页任务清单，交互层调用任务状态模块，存储层保留任务列表。",
+    "criteria": [
+      {
+        "id": "AC-1",
+        "expected": "新增任务后列表显示该任务"
+      },
+      {
+        "id": "AC-2",
+        "expected": "标记完成后状态为已完成"
+      },
+      {
+        "id": "AC-3",
+        "expected": "重新加载后任务和完成状态仍存在"
+      }
+    ],
+    "tasks": [
+      {
+        "id": "T-1",
+        "title": "新增与完成任务",
+        "dependsOn": [],
+        "criteria": [
+          "AC-1",
+          "AC-2"
+        ]
+      },
+      {
+        "id": "T-2",
+        "title": "保存与恢复任务",
+        "dependsOn": [
+          "T-1"
+        ],
+        "criteria": [
+          "AC-3"
+        ]
+      }
+    ]
+  },
+  "buildInput": {
+    "task": {
+      "id": "T-2",
+      "title": "保存与恢复任务",
+      "dependsOn": [
+        "T-1"
+      ],
+      "criteria": [
+        "AC-3"
+      ]
+    },
+    "previous": {
+      "schemaVersion": 1,
+      "version": 1,
+      "taskId": "T-1",
+      "features": {
+        "add": true,
+        "complete": true,
+        "persist": false
+      }
+    },
+    "scenario": "repair"
+  },
+  "verifyInput": {
+    "plan": {
+      "schemaVersion": 1,
+      "version": "plan-1",
+      "questions": [],
+      "design": "单页任务清单，交互层调用任务状态模块，存储层保留任务列表。",
+      "criteria": [
+        {
+          "id": "AC-1",
+          "expected": "新增任务后列表显示该任务"
+        },
+        {
+          "id": "AC-2",
+          "expected": "标记完成后状态为已完成"
+        },
+        {
+          "id": "AC-3",
+          "expected": "重新加载后任务和完成状态仍存在"
+        }
+      ],
+      "tasks": [
+        {
+          "id": "T-1",
+          "title": "新增与完成任务",
+          "dependsOn": [],
+          "criteria": [
+            "AC-1",
+            "AC-2"
+          ]
+        },
+        {
+          "id": "T-2",
+          "title": "保存与恢复任务",
+          "dependsOn": [
+            "T-1"
+          ],
+          "criteria": [
+            "AC-3"
+          ]
+        }
+      ]
+    },
+    "artifact": {
+      "schemaVersion": 1,
+      "version": 2,
+      "taskId": "T-2",
+      "features": {
+        "add": true,
+        "complete": true,
+        "persist": false
+      }
+    }
+  },
+  "repairInput": {
+    "previous": {
+      "schemaVersion": 1,
+      "version": 2,
+      "taskId": "T-2",
+      "features": {
+        "add": true,
+        "complete": true,
+        "persist": false
+      }
+    },
+    "report": {
+      "schemaVersion": 1,
+      "suiteVersion": "task-list-1",
+      "version": 2,
+      "checks": [
+        {
+          "id": "AC-1",
+          "expected": "新增任务后列表显示该任务",
+          "steps": "新增一条任务并读取列表",
+          "actual": [
+            {
+              "title": "验收任务",
+              "done": false
+            }
+          ],
+          "passed": true
+        },
+        {
+          "id": "AC-2",
+          "expected": "标记完成后状态为已完成",
+          "steps": "标记首条任务完成并读取状态",
+          "actual": [
+            {
+              "title": "验收任务",
+              "done": true
+            }
+          ],
+          "passed": true
+        },
+        {
+          "id": "AC-3",
+          "expected": "重新加载后任务和完成状态仍存在",
+          "steps": "重新创建应用实例并读取同一存储",
+          "actual": [],
+          "passed": false
+        }
+      ]
+    },
+    "scenario": "repair"
+  },
+  "fixed": {
+    "schemaVersion": 1,
+    "version": 3,
+    "taskId": "repair",
+    "parentVersion": 2,
+    "features": {
+      "add": true,
+      "complete": true,
+      "persist": true
+    }
+  },
+  "passedReport": {
+    "schemaVersion": 1,
+    "suiteVersion": "task-list-1",
+    "version": 3,
+    "checks": [
+      {
+        "id": "AC-1",
+        "expected": "新增任务后列表显示该任务",
+        "steps": "新增一条任务并读取列表",
+        "actual": [
+          {
+            "title": "验收任务",
+            "done": false
+          }
+        ],
+        "passed": true
+      },
+      {
+        "id": "AC-2",
+        "expected": "标记完成后状态为已完成",
+        "steps": "标记首条任务完成并读取状态",
+        "actual": [
+          {
+            "title": "验收任务",
+            "done": true
+          }
+        ],
+        "passed": true
+      },
+      {
+        "id": "AC-3",
+        "expected": "重新加载后任务和完成状态仍存在",
+        "steps": "重新创建应用实例并读取同一存储",
+        "actual": [
+          {
+            "title": "验收任务",
+            "done": true
+          }
+        ],
+        "passed": true
+      }
+    ]
+  },
+  "calls": [
+    {
+      "id": "sample-1",
+      "stage": "plan",
+      "taskId": "PRD",
+      "model": "mock-v1",
+      "source": "模拟",
+      "input": 120,
+      "output": 80
+    },
+    {
+      "id": "sample-2",
+      "stage": "build",
+      "taskId": "T-1",
+      "model": "mock-v1",
+      "source": "模拟",
+      "input": 100,
+      "output": 80
+    },
+    {
+      "id": "sample-3",
+      "stage": "build",
+      "taskId": "T-2",
+      "model": "mock-v1",
+      "source": "模拟",
+      "input": 100,
+      "output": 80
+    },
+    {
+      "id": "sample-4",
+      "stage": "verify",
+      "taskId": "v2",
+      "model": "mock-v1",
+      "source": "模拟",
+      "input": 65,
+      "output": 35
+    },
+    {
+      "id": "sample-5",
+      "stage": "repair",
+      "taskId": "AC-3",
+      "model": "mock-v1",
+      "source": "模拟",
+      "input": 90,
+      "output": 50
+    },
+    {
+      "id": "sample-6",
+      "stage": "verify",
+      "taskId": "v3",
+      "model": "mock-v1",
+      "source": "模拟",
+      "input": 65,
+      "output": 35
+    }
+  ]
+}

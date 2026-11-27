@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>协作台 · 模拟运行</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+<header><div class="wrap top"><span class="brand"><i class="logo" aria-hidden="true">▦</i> 协作台</span><span class="env"><i></i> 本地模拟环境</span></div></header>
+<main class="wrap">
+<h1>多智能体工作台</h1>
+<div class="layout"><aside>
+<form id="setup" class="panel"><h2>新建运行</h2>
+<div class="labelrow"><label for="prd">产品需求文档</label><label class="file" for="upload">导入文件<input type="file" id="upload" accept=".md,.txt,text/plain,text/markdown"></label></div>
+<textarea id="prd" required maxlength="32000" rows="7"></textarea>
+<label for="scenario">模拟场景</label><select id="scenario"></select>
+<div class="fields"><label>Token 预算<input id="budget" type="number" value="3000" min="0" max="1000000" required></label><label>修复轮数上限<input id="repairs" type="number" value="2" min="0" max="10" required></label></div>
+<button class="primary" id="start" disabled>开始运行 <span aria-hidden="true">→</span></button>
+<p class="error" id="notice" role="status"></p></form>
+<section class="panel history"><h2>运行记录</h2><div id="history"></div></section></aside>
+<section id="result" class="panel output" aria-live="polite"><h2>执行结果</h2><p>启动一次模拟运行，查看验收证据、产物和 Token 明细。</p></section></div></main>
+<script type="module" src="/app.js"></script></body></html>
