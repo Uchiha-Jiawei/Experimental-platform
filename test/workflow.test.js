@@ -3,11 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { once } from 'node:events';
 import { execute, defaults } from '../core/workflow.js';
 import { orderTasks } from '../core/contracts.js';
 import { openStore } from '../core/store.js';
-import { createServer } from '../server.js';
 
 const fixtures = JSON.parse(readFileSync(new URL('../fixtures/handoff.json', import.meta.url)));
 for (const [scenario, status, used, repairs] of [
@@ -54,22 +52,4 @@ test('单组替换为异步适配器后仍可完成联调', async () => {
   const run = await execute({}, { adapters: { ...defaults, planning } });
   assert.equal(run.status, 'passed');
   assert.equal(run.repairs, 1);
-});
-test('Web 入口发起运行、查看历史与产物', async t => {
-  const server = createServer(mkdtempSync(join(tmpdir(),'agent-http-')));
-  server.listen(0,'127.0.0.1');
-  await once(server,'listening');
-  t.after(() => new Promise(resolve => { server.close(resolve); server.closeAllConnections(); }));
-  const url = 'http://127.0.0.1:' + server.address().port;
-  assert.match(await (await fetch(url)).text(),/多智能体工作台/);
-  const post = input => fetch(url+'/api/runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});
-  assert.equal((await post({ budget:-1 })).status,400);
-  const res = await post({scenario:'repair'});
-  assert.equal(res.status,201);
-  const run = await res.json();
-  const path = '/api/runs/' + run.id;
-  assert.equal((await (await fetch(url+path)).json()).status,'passed');
-  assert.equal((await (await fetch(url+'/api/runs')).json())[0].id,run.id);
-  assert.match(await (await fetch(url+path+'/artifacts/3')).text(),/任务清单/);
-  assert.equal((await fetch(url+path+'/artifacts/99')).status,404);
 });

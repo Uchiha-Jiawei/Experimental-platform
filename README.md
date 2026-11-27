@@ -10,7 +10,11 @@
 npm start
 ```
 
-打开 http://127.0.0.1:4317 ，保留内置 PRD，选择“缺陷修复”，点击“开始运行”。在 v2 与 v3 分别打开任务清单，新增任务、标记完成并刷新页面。v2 丢失状态，v3 保留。运行历史在重启后仍可查看。通过 `npm test` 运行回归测试，也可直接使用 `node server.js` 和 `node --test`。
+打开 http://127.0.0.1:4317 ，新建项目，在项目对话中发送消息。支持新建多个对话，侧栏用于切换项目和对话。点击“上传 PRD”选择自己的 UTF-8 Markdown 或 TXT 文件，再点击“运行项目”。“项目文件”可以查看磁盘目录和历次上传的原文。要复现任务清单演示，可手动选择仓库的 `fixtures/prd.md`。运行结果在对话中展示，并可打开每个产物版本。
+
+默认数据目录为 `projects/<项目 UUID>/`。其中 `project.json` 保存项目名称、创建时间及当前文档索引，`chats/<对话 UUID>.json` 保存消息和运行引用，`documents/` 保存上传的原始文件，`runs/` 保存包含产物和证据的运行快照。显示名称及原文件名保存在元数据中，可通过 `PROJECTS_DIR` 指定项目根目录。项目数据已加入 Git 忽略规则。浏览器 URL 仅保存定位标识，实际数据在服务端磁盘。普通聊天使用本地规则回复，可查询该对话最近一次运行或查看当前需求文档。
+
+运行 `npm test` 检查项目隔离、持久化、上传与框架回归。
 
 | 模拟场景 | 默认预算 | 预期结果 | 模拟 Token |
 | --- | ---: | --- | ---: |
@@ -19,7 +23,7 @@ npm start
 | 预算停止 | 600 | 已完成两项开发，预算不足以发起验收 | 560 |
 | 持续失败 | 3000 | 缺陷持续存在，两轮修复后停止 | 1140 |
 
-网页可编辑或导入 UTF-8 的 Markdown、纯文本文档。模拟规划器只识别内置任务清单，其他 PRD 会进入“待确认”。预算和修复上限均可调整。输入、输出用量为固定模拟值，无真实模型计费。
+模拟规划器只识别内置任务清单，其他 PRD 会进入“待确认”。预算和修复上限均可调整。输入、输出用量为固定模拟值，无真实模型计费。
 
 ## 三组并行接入
 
@@ -37,7 +41,7 @@ npm start
 ## 调度、存储与产物边界
 
 - 调度器检查依赖、验收覆盖、产物和报告版本，执行可用任务。每次模拟调用前检查预算，仅对已发起调用记账。验收失败且仍有额度时执行修复，随后重新运行全部验收项。
-- 每个运行有独立 UUID。单进程服务在每个阶段结束后用临时文件加重命名保存 JSON 快照，默认目录为 `.runtime/runs/`。重启后未完成的运行标为已中断，可按原配置发起新运行。可用环境变量 `RUN_DIR`、`PORT` 修改启动配置。
+- 每个运行有独立 UUID。单进程服务在每个阶段结束后用临时文件加重命名保存 JSON 快照，目录为该项目下的 `runs/`。重启后未完成的运行标为已中断，可按原配置发起新运行。旧版公共运行可通过原有只读接口查看。环境变量 `RUN_DIR` 指向旧版记录，`PORT` 可修改监听端口。
 - 模拟产物是版本化功能描述。内置执行器只解释三个布尔能力并运行随框架发布的任务清单实现，每次验收使用新的内存存储。工作台可以打开各版本独立的 HTML 页面，页面与验收使用相同业务代码。接入任意生成代码时，需要另配具备资源限制的隔离执行器，并扩展产物契约。
 - 当前验证覆盖业务状态和存储恢复。真实模型、任意项目构建和浏览器自动化验收分别由后续模块接入。模拟调用明细包含调用编号、阶段、任务、模型、输入与输出 Token。
 
@@ -45,10 +49,16 @@ npm start
 
 | 方法与路径 | 作用 |
 | --- | --- |
-| GET /api/config | 示例 PRD 和场景列表 |
-| POST /api/runs | 创建运行，返回完整结果。JSON 可选字段为 prd、scenario、budget、maxRepairs |
-| GET /api/runs | 按时间倒序查看历史摘要 |
-| GET /api/runs/{id} | 查看持久化运行详情 |
-| GET /api/runs/{id}/artifacts/{version} | 在浏览器打开对应版本的任务清单 |
+| GET /api/config | 模拟场景列表 |
+| GET、POST /api/projects | 列出项目，或按 name 创建项目及首个对话 |
+| GET /api/projects/{p} | 元数据、目录和对话摘要 |
+| POST /api/projects/{p}/documents | 上传原文件，JSON 包含 name 和 Base64 编码的 data |
+| GET /api/projects/{p}/documents/{d} | 查看指定版本原文 |
+| POST /api/projects/{p}/chats | 创建项目内对话 |
+| GET /api/projects/{p}/chats/{c} | 读取对话与消息 |
+| POST /api/projects/{p}/chats/{c}/messages | 保存文本消息 text 并生成模拟回复 |
+| POST /api/projects/{p}/chats/{c}/runs | 运行当前上传的 PRD，可设置 scenario、budget、maxRepairs 和校验用的 documentId |
+| GET /api/projects/{p}/runs/{r} | 查看运行 |
+| GET /api/projects/{p}/runs/{r}/artifacts/{version} | 打开产物 |
 
 `scenario` 可取 `success`、`repair`、`budget` 或 `stubborn`。应用层终态包括 `passed`、`budget_stop`、`repair_limit`、`clarification`、`failed` 和 `interrupted`。预算停止时可能已有产物，最终达标以当前产物的完整验收结果为准。

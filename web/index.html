@@ -1,18 +1,24 @@
 <!doctype html>
-<html lang="zh-CN">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>协作台 · 模拟运行</title><link rel="stylesheet" href="/style.css"></head>
-<body>
-<header><div class="wrap top"><span class="brand"><i class="logo" aria-hidden="true">▦</i> 协作台</span><span class="env"><i></i> 本地模拟环境</span></div></header>
-<main class="wrap">
-<h1>多智能体工作台</h1>
-<div class="layout"><aside>
-<form id="setup" class="panel"><h2>新建运行</h2>
-<div class="labelrow"><label for="prd">产品需求文档</label><label class="file" for="upload">导入文件<input type="file" id="upload" accept=".md,.txt,text/plain,text/markdown"></label></div>
-<textarea id="prd" required maxlength="32000" rows="7"></textarea>
-<label for="scenario">模拟场景</label><select id="scenario"></select>
-<div class="fields"><label>Token 预算<input id="budget" type="number" value="3000" min="0" max="1000000" required></label><label>修复轮数上限<input id="repairs" type="number" value="2" min="0" max="10" required></label></div>
-<button class="primary" id="start" disabled>开始运行 <span aria-hidden="true">→</span></button>
-<p class="error" id="notice" role="status"></p></form>
-<section class="panel history"><h2>运行记录</h2><div id="history"></div></section></aside>
-<section id="result" class="panel output" aria-live="polite"><h2>执行结果</h2><p>启动一次模拟运行，查看验收证据、产物和 Token 明细。</p></section></div></main>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>协作台 · 项目工作区</title><link rel="stylesheet" href="/style.css"></head>
+<body><div id="shell">
+<aside id="sidebar"><div class="brand"><span class="mark" aria-hidden="true">›_</span>协作台<button class="icon mobile" id="closeNav" aria-label="收起侧栏">×</button></div>
+<button class="newProject" data-create><span aria-hidden="true">＋</span> 新建项目</button>
+<section><h2>项目</h2><nav id="projects" aria-label="项目列表"></nav></section>
+<section id="threads" hidden><div class="groupTitle"><h2>项目对话</h2><button class="icon" id="newChat" title="新建对话" aria-label="新建对话">＋</button></div><nav id="chats" aria-label="对话列表"></nav></section>
+<footer><span class="dot"></span> 本地工作区</footer></aside>
+<button id="scrim" aria-label="关闭项目列表" hidden></button>
+<main><header><button class="icon mobile" id="openNav" aria-label="打开项目列表">☰</button><span id="crumb">工作区</span><button class="quiet" id="showFiles" hidden>项目文件</button></header>
+<div id="stream"><div id="welcome" class="welcome"><span class="heroMark" aria-hidden="true">›_</span><h1>从一个项目开始</h1><p>创建项目，把需求文档、对话和交付记录放在一起。</p><button class="solid" data-create>新建项目 <span aria-hidden="true">↗</span></button></div>
+<div id="messages" class="conversation" hidden></div></div>
+<div class="composeWrap" id="composeWrap" hidden><form id="composer"><textarea id="message" aria-label="项目消息" rows="2" maxlength="16000" placeholder="给项目助手发消息…"></textarea>
+<div class="tools"><button type="button" class="tool" id="uploadBtn" title="上传需求文档"><span aria-hidden="true">＋</span> 上传 PRD</button>
+<button type="button" class="tool" id="runBtn" disabled>运行项目</button><button class="send" id="sendBtn" aria-label="发送消息" title="发送消息" disabled>↑</button></div></form>
+<div class="composeFoot"><span>本地模拟助手</span><span id="docStatus"></span></div></div>
+</main></div>
+<p id="notice" role="status" hidden></p><input type="file" id="upload" accept=".md,.txt" hidden>
+<dialog id="createDialog"><form id="projectForm"><h2>新建项目</h2><label>项目名称<input id="projectName" maxlength="80" required autocomplete="off" placeholder="例如：任务清单"></label><div class="actions"><button type="button" data-close>取消</button><button class="solid">创建项目</button></div></form></dialog>
+<dialog id="filesDialog"><h2>项目文件</h2><p id="directory" class="path"></p><div id="documents"></div><div class="actions"><button data-close>关闭</button><button class="solid" id="fileUpload">上传 PRD</button></div></dialog>
+<dialog id="runDialog"><form id="runForm"><h2>运行项目</h2><p id="runDoc"></p><label>模拟场景<select id="scenario"></select></label>
+<label>Token 预算<input id="budget" type="number" value="3000" min="0" max="1000000" required></label><label>修复轮数上限<input id="repairs" type="number" value="2" min="0" max="10" required></label>
+<div class="actions"><button type="button" data-close>取消</button><button class="solid">开始运行</button></div></form></dialog>
 <script type="module" src="/app.js"></script></body></html>
