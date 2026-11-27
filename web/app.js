@@ -80,12 +80,19 @@ async function select(id,tid) {
   history.replaceState(null,'','#'+id+'/'+c.id);
   nav(false);draw();
 }
-for(const btn of document.querySelectorAll('[data-create]')) btn.onclick=()=>{$('projectName').value='';showDialog('createDialog');$('projectName').focus();};
+for(const btn of document.querySelectorAll('[data-create]')) btn.onclick=()=>{$('projectName').value='';$('projectFolder').value='';showDialog('createDialog');$('projectName').focus();};
 for(const btn of document.querySelectorAll('[data-close]')) btn.onclick=()=>btn.closest('dialog').close();
 $('openNav').onclick=()=>nav(true);$('closeNav').onclick=$('scrim').onclick=()=>nav(false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')nav(false);});
+$('pickFolder').onclick=()=>act(async()=>{
+  const {folder,manual}=await api('/api/select-folder',{});
+  if(folder) {
+    $('projectFolder').value=folder;
+    if(!$('projectName').value.trim()) $('projectName').value=folder.split(/[\\/]/).filter(Boolean).at(-1)||'';
+  } else if(manual) notice('系统选择器不可用，请输入项目文件夹的绝对路径。');
+});
 $('projectForm').onsubmit=e=>{e.preventDefault();act(async()=>{
-  const p=await api('/api/projects',{name:$('projectName').value});projects=await api('/api/projects');await select(p.id);
+  const p=await api('/api/projects',{name:$('projectName').value,folder:$('projectFolder').value.trim()});projects=await api('/api/projects');await select(p.id);
   $('createDialog').close();$('message').focus();
 });};
 $('newChat').onclick=()=>act(async()=>{const c=await api(base()+'/chats',{});await select(project.id,c.id);});
@@ -97,7 +104,7 @@ $('message').oninput=()=>$('sendBtn').disabled=!$('message').value.trim();
 $('message').onkeydown=e=>{if(e.key==='Enter' && !e.shiftKey && !e.isComposing && e.keyCode!==229){e.preventDefault();$('composer').requestSubmit();}};
 function files() {
   $('directory').textContent=project.directory;
-  $('documents').innerHTML=project.documents.length?project.documents.map(d=>'<p><a target="_blank" rel="noopener" href="'+base()+'/documents/'+d.id+'">'+esc(d.name)+'</a> '+(d.id===project.activeDocument?' · 当前 PRD':'')+'</p>').join(''):'尚未上传文档。支持 UTF-8 的 .md 和 .txt 文件。';
+  $('documents').innerHTML=project.documents.length?project.documents.map(d=>'<p><a target="_blank" rel="noopener" href="'+base()+'/documents/'+d.id+'">'+esc(d.name)+'</a> · <a download href="'+base()+'/documents/'+d.id+'/original">下载原件</a> '+(d.id===project.activeDocument?' · 当前 PRD':'')+'</p>').join(''):'尚未上传文档。支持 Word（.docx、.doc）及 UTF-8 的 Markdown、TXT 文件。';
 }
 $('showFiles').onclick=()=>{files();showDialog('filesDialog');};
 let uploadProject;
@@ -105,10 +112,15 @@ $('uploadBtn').onclick=$('fileUpload').onclick=()=>{uploadProject=project.id;$('
 $('upload').onchange=()=>act(async()=>{
   const f=$('upload').files[0];$('upload').value='';
   if(!f || project?.id!==uploadProject) return;
-  if(f.size>128000) throw Error('文件过大，最多支持 32000 个文本字符');
-  const bytes=new Uint8Array(await f.arrayBuffer());
-  let binary='';for(const byte of bytes) binary+=String.fromCharCode(byte);
-  await api(base()+'/documents',{name:f.name,data:btoa(binary)});await select(project.id,chat.id);
+  const word=/\.docx?$/i.test(f.name);
+  if(f.size>(word?10*1024*1024:128000)) throw Error(word?'Word 文件不能超过 10 MiB':'文本文件过大，最多支持 32000 个字符');
+  const data=await new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result.split(',')[1]);
+    reader.onerror=()=>reject(Error('无法读取所选文件'));
+    reader.readAsDataURL(f);
+  });
+  await api(base()+'/documents',{name:f.name,data});await select(project.id,chat.id);
   if($('filesDialog').open) files();else notice('已保存 '+f.name);
 });
 $('runBtn').onclick=()=>{$('runDoc').textContent='使用 '+project.documents.find(d=>d.id===project.activeDocument).name;showDialog('runDialog');};

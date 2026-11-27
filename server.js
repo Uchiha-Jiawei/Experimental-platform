@@ -8,15 +8,18 @@ import { execute } from './core/workflow.js';
 import { validateInput, scenarios } from './core/contracts.js';
 import { exportProduct } from './product/export.js';
 
+import { pickFolder } from './core/folder-picker.js';
+import { maxWordBytes } from './core/word.js';
+
 const assets = { '/': ['index.html','text/html'], '/app.js': ['app.js','text/javascript'], '/style.css': ['style.css','text/css'] };
-async function body(req) {
+async function body(req, maxBytes = 200000) {
   if (req.headers.origin && req.headers.origin !== 'http://' + req.headers.host) reject('来源不匹配',403);
   if (req.headers['content-type']?.split(';')[0] !== 'application/json') reject('需要 JSON',415);
   const chunks = [];
   let size = 0;
   for await (const chunk of req) {
     size += chunk.length;
-    if (size > 200000) reject('内容过大',413);
+    if (size > maxBytes) reject('内容过大',413);
     chunks.push(chunk);
   }
   let value;
@@ -62,14 +65,27 @@ export function createServer(directory, legacyDirectory) {
         const artifact = kind === 'artifacts' && run?.artifacts.find(a=>a.version === Number(item));
         if (artifact) return send(200,exportProduct(id,artifact),'text/html');
       }
+      if (post && route === '/api/select-folder') {
+        await body(req);
+        return send(200,await pickFolder());
+      }
       if (scope !== 'projects') reject('请在项目中操作',404);
       if (!id && get) return send(200,projects.list());
-      if (!id && post) return send(201,projects.create((await body(req)).name));
-      const input = post ? await body(req) : {};
+      if (!id && post) {
+        const {name,folder} = await body(req);
+        return send(201,projects.create(name,folder));
+      }
+      const input = post ? await body(req,kind==='documents' && !item ? Math.ceil(maxWordBytes/3)*4+2048 : undefined) : {};
       const project = projects.project(id);
       if (get && !kind) return send(200,projects.detail(id));
       if (kind === 'documents') {
-        if (post && !item) return send(201,projects.upload(id,input));
+        if (post && !item) return send(201,await projects.upload(id,input));
+        if (get && item && action==='original') {
+          const {name,bytes} = projects.document(id,item,true);
+          res.writeHead(200,{'Content-Type':'application/octet-stream','Cache-Control':'no-store',
+            'Content-Disposition':"attachment; filename*=UTF-8''"+encodeURIComponent(name)});
+          return res.end(bytes);
+        }
         if (get && item) return send(200,projects.document(id,item),'text/plain');
       }
       if (kind === 'chats') {

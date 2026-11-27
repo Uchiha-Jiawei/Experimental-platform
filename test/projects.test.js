@@ -20,9 +20,12 @@ test('项目聊天、上传、版本交付、项目隔离与重启恢复', async
   assert.deepEqual(await call('/api/projects'),[]);
   assert.equal((await server.request('/api/runs',{})).status,404);
   assert.equal((await server.request('/api/projects',{name:' '})).status,400);
-  const project=await call('/api/projects',{name:'研发项目'});
+  assert.equal((await server.request('/api/projects',{name:'遗漏文件夹'})).status,400);
+  const folder=mkdtempSync(join(tmpdir(),'测试项目-'));
+  const project=await call('/api/projects',{name:'研发项目',folder});
+  assert.equal((await server.request('/api/projects',{name:'重复',folder})).status,409);
   const path='/api/projects/'+project.id;
-  const other='/api/projects/'+(await call('/api/projects',{name:'另一个项目'})).id;
+  const other='/api/projects/'+(await call('/api/projects',{name:'另一个项目',folder:mkdtempSync(join(tmpdir(),'other-project-'))})).id;
   const chat=(await call(path)).chats[0];
   const thread=path+'/chats/'+chat.id;
   assert.equal((await server.request(thread+'/runs',{prd:'注入文档'})).status,409);
@@ -35,7 +38,7 @@ test('项目聊天、上传、版本交付、项目隔离与重启恢复', async
   const upload=(name,bytes)=>call(path+'/documents',{name,data:bytes.toString('base64')});
   assert.equal((await server.request(path+'/documents',{name:'../a.md',data:'YQ=='})).status,400);
   const first=await upload('我的需求.md',prd);
-  assert.deepEqual(readFileSync(join(dir,project.id,'documents',first.id+'.md')),prd);
+  assert.deepEqual(readFileSync(join(folder,'.agent-workspace','documents',first.id+'.md')),prd);
   const final=await call(thread+'/runs',{documentId:first.id,scenario:'repair'});
   const runId=final.messages.at(-1).runId;
   const run=await call(path+'/runs/'+runId);
@@ -43,6 +46,18 @@ test('项目聊天、上传、版本交付、项目隔离与重启恢复', async
   assert.equal(run.used,900);
   assert.match(await (await server.request(path+'/runs/'+runId+'/artifacts/3')).text(),/任务清单/);
   assert.equal((await server.request(other+'/runs/'+runId)).status,404);
+  for (const ext of ['docx','doc']) {
+    const original=readFileSync(new URL('./requirements.'+ext,import.meta.url));
+    const word=await upload('产品需求.'+ext,original);
+    const route=path+'/documents/'+word.id;
+    const preview=await (await server.request(route)).text();
+    assert.equal(preview.replace(/\s/g,''),prd.toString().replace(/\s/g,''));
+    assert.deepEqual(Buffer.from(await (await server.request(route+'/original')).arrayBuffer()),original);
+    const output=await call(thread+'/runs',{documentId:word.id});
+    assert.equal((await call(path+'/runs/'+output.messages.at(-1).runId)).status,'passed');
+    assert.equal((await server.request(path+'/documents',{name:'损坏.'+ext,data:'YQ=='})).status,400);
+    assert.equal((await call(path)).activeDocument,word.id);
+  }
   const next=await upload('我的需求.md',Buffer.from('另一份用户上传的需求'));
   assert.notEqual(first.id,next.id);
   assert.equal((await server.request(thread+'/runs',{documentId:first.id})).status,409);

@@ -15,8 +15,10 @@
 <button type="button" class="tool" id="runBtn" disabled>运行项目</button><button class="send" id="sendBtn" aria-label="发送消息" title="发送消息" disabled>↑</button></div></form>
 <div class="composeFoot"><span>本地模拟助手</span><span id="docStatus"></span></div></div>
 </main></div>
-<p id="notice" role="status" hidden></p><input type="file" id="upload" accept=".md,.txt" hidden>
-<dialog id="createDialog"><form id="projectForm"><h2>新建项目</h2><label>项目名称<input id="projectName" maxlength="80" required autocomplete="off" placeholder="例如：任务清单"></label><div class="actions"><button type="button" data-close>取消</button><button class="solid">创建项目</button></div></form></dialog>
+<p id="notice" role="status" hidden></p><input type="file" id="upload" accept=".docx,.doc,.md,.txt" hidden>
+<dialog id="createDialog"><form id="projectForm"><h2>新建项目</h2><label>项目名称<input id="projectName" maxlength="80" required autocomplete="off" placeholder="例如：任务清单"></label>
+<label for="projectFolder">项目文件夹</label><div class="folderInput"><input id="projectFolder" required autocomplete="off" placeholder="选择文件夹或输入绝对路径"><button id="pickFolder" type="button">选择文件夹</button></div>
+<small>聊天、文档和运行记录将保存在该文件夹的 .agent-workspace 子目录中。</small><div class="actions"><button type="button" data-close>取消</button><button class="solid">创建项目</button></div></form></dialog>
 <dialog id="filesDialog"><h2>项目文件</h2><p id="directory" class="path"></p><div id="documents"></div><div class="actions"><button data-close>关闭</button><button class="solid" id="fileUpload">上传 PRD</button></div></dialog>
 <dialog id="runDialog"><form id="runForm"><h2>运行项目</h2><p id="runDoc"></p><label>模拟场景<select id="scenario"></select></label>
 <label>Token 预算<input id="budget" type="number" value="3000" min="0" max="1000000" required></label><label>修复轮数上限<input id="repairs" type="number" value="2" min="0" max="10" required></label>
